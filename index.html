@@ -3,91 +3,340 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informational Website</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            margin: 0;
-            background-color: #f5f5f7;
-            color: #333;
-        }
-        header {
-            background-color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        h1 {
-            margin: 0;
-            font-size: 2.5em;
-        }
-        nav {
-            margin-top: 10px;
-        }
-        nav a {
-            margin: 0 15px;
-            text-decoration: none;
-            color: #0071e3;
-            font-weight: bold;
-        }
-        section {
-            padding: 40px 20px;
-            max-width: 800px;
-            margin: auto;
-        }
-        footer {
-            text-align: center;
-            padding: 20px;
-            background-color: white;
-            position: relative;
-            bottom: 0;
-            width: 100%;
-            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #0071e3;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1em;
-        }
-        button:hover {
-            background-color: #005bb5;
-        }
-    </style>
+    <title>AI Meme Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 transition-colors duration-200">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <!-- App header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">AI Meme Generator</h1>
+            <p class="text-gray-600 dark:text-gray-300 mt-2">Upload an image to generate memes with Claude and GPT-4o</p>
+        </header>
 
-<header>
-    <h1>Informational Website</h1>
-    <nav>
-        <a href="#about">About</a>
-        <a href="#services">Services</a>
-        <a href="#contact">Contact</a>
-    </nav>
-</header>
+        <!-- Image upload area -->
+        <div id="upload-container" class="mb-8">
+            <div id="upload-area" class="border-2 border-dashed border-gray-400 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-400 transition-colors">
+                <div class="flex flex-col items-center justify-center">
+                    <svg class="w-12 h-12 text-gray-400 dark:text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <p class="text-gray-700 dark:text-gray-300 mb-2">Drag and drop an image here, or click to select</p>
+                    <p class="text-gray-500 dark:text-gray-400 text-sm">Supported formats: JPG, PNG, GIF</p>
+                </div>
+                <input id="file-input" type="file" accept="image/*" class="hidden">
+            </div>
+        </div>
 
-<section id="about">
-    <h2>About Us</h2>
-    <p>Welcome to our informational website. We provide insights and updates on various topics, ensuring you stay informed.</p>
-</section>
+        <!-- Preview of uploaded image -->
+        <div id="image-preview-container" class="mb-8 hidden">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Your Image</h2>
+            <div class="flex justify-center">
+                <div class="relative max-w-lg">
+                    <img id="image-preview" src="" alt="Uploaded image" class="max-w-full h-auto rounded-lg shadow-md mx-auto">
+                    <button id="remove-image" class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="mt-4 text-center">
+                <button id="generate-memes" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                    Generate Memes
+                </button>
+            </div>
+        </div>
 
-<section id="services">
-    <h2>Our Services</h2>
-    <p>We offer a range of services designed to meet your needs. Explore our offerings and discover how we can assist you.</p>
-    <button onclick="alert('Thank you for your interest!')">Learn More</button>
-</section>
+        <!-- Loading state -->
+        <div id="loading-container" class="text-center py-12 hidden">
+            <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-500 mx-auto mb-4"></div>
+            <p class="text-gray-700 dark:text-gray-300 text-lg">Generating memes...</p>
+            <p id="loading-status" class="text-gray-500 dark:text-gray-400 mt-2">Waiting for responses...</p>
+        </div>
 
-<footer>
-    <p>&copy; 2025 Informational Website. All rights reserved.</p>
-</footer>
+        <!-- Generated memes display -->
+        <div id="memes-container" class="hidden">
+            <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-4">Generated Memes</h2>
+            
+            <!-- Claude memes -->
+            <div class="mb-8">
+                <h3 class="text-lg font-medium text-purple-600 dark:text-purple-400 mb-3">Claude-3.7-Sonnet</h3>
+                <div id="claude-memes" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Meme containers will be added here -->
+                </div>
+            </div>
+            
+            <!-- GPT-4o memes -->
+            <div>
+                <h3 class="text-lg font-medium text-green-600 dark:text-green-400 mb-3">GPT-4o</h3>
+                <div id="gpt-memes" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Meme containers will be added here -->
+                </div>
+            </div>
+            
+            <!-- Reset button -->
+            <div class="mt-8 text-center">
+                <button id="reset-app" class="bg-gray-600 hover:bg-gray-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">
+                    Create Another Meme
+                </button>
+            </div>
+        </div>
+    </div>
 
-<script>
-    // You can add more interactivity here if needed
-    console.log("Welcome to the Informational Website!");
-</script>
+    <script>
+        // Check for dark mode preference
+        const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (isDarkMode) {
+            document.body.classList.add('dark');
+        }
 
+        // DOM elements
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const removeImageBtn = document.getElementById('remove-image');
+        const generateMemesBtn = document.getElementById('generate-memes');
+        const loadingContainer = document.getElementById('loading-container');
+        const loadingStatus = document.getElementById('loading-status');
+        const memesContainer = document.getElementById('memes-container');
+        const claudeMemes = document.getElementById('claude-memes');
+        const gptMemes = document.getElementById('gpt-memes');
+        const resetAppBtn = document.getElementById('reset-app');
+
+        let uploadedImage = null;
+
+        // Upload area click and drag events
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('border-indigo-500', 'dark:border-indigo-400');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('border-indigo-500', 'dark:border-indigo-400');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('border-indigo-500', 'dark:border-indigo-400');
+            
+            if (e.dataTransfer.files.length) {
+                handleImageUpload(e.dataTransfer.files[0]);
+            }
+        });
+
+        // File input change event
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length) {
+                handleImageUpload(fileInput.files[0]);
+            }
+        });
+
+        // Handle image upload
+        function handleImageUpload(file) {
+            if (!file.type.match('image.*')) {
+                alert('Please select an image file');
+                return;
+            }
+
+            uploadedImage = file;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imagePreview.src = e.target.result;
+                imagePreviewContainer.classList.remove('hidden');
+                document.getElementById('upload-container').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove image button
+        removeImageBtn.addEventListener('click', () => {
+            uploadedImage = null;
+            imagePreview.src = '';
+            imagePreviewContainer.classList.add('hidden');
+            document.getElementById('upload-container').classList.remove('hidden');
+            fileInput.value = '';
+        });
+
+        // Generate memes button
+        generateMemesBtn.addEventListener('click', async () => {
+            if (!uploadedImage) return;
+            
+            imagePreviewContainer.classList.add('hidden');
+            loadingContainer.classList.remove('hidden');
+            memesContainer.classList.add('hidden');
+            
+            // Clear previous memes
+            claudeMemes.innerHTML = '';
+            gptMemes.innerHTML = '';
+            
+            try {
+                // Generate memes with both bots simultaneously
+                loadingStatus.textContent = 'Generating memes with Claude and GPT-4o...';
+                
+                const botPromises = [
+                    generateMemes('@Claude-3.7-Sonnet', claudeMemes),
+                    generateMemes('@GPT-4o', gptMemes)
+                ];
+                
+                await Promise.all(botPromises);
+                
+                // Show memes
+                loadingContainer.classList.add('hidden');
+                memesContainer.classList.remove('hidden');
+            } catch (error) {
+                console.error('Error generating memes:', error);
+                loadingStatus.textContent = 'Error: ' + error.message;
+                
+                // Show reset button even on error
+                setTimeout(() => {
+                    loadingContainer.classList.add('hidden');
+                    memesContainer.classList.remove('hidden');
+                }, 2000);
+            }
+        });
+
+        // Reset app button
+        resetAppBtn.addEventListener('click', () => {
+            uploadedImage = null;
+            imagePreview.src = '';
+            memesContainer.classList.add('hidden');
+            document.getElementById('upload-container').classList.remove('hidden');
+            fileInput.value = '';
+        });
+
+        // Generate memes using the specified bot
+        async function generateMemes(botName, container) {
+            return new Promise((resolve, reject) => {
+                // Register handler for bot responses
+                const handlerId = `meme-handler-${botName.substring(1)}-${Date.now()}`;
+                
+                window.Poe.registerHandler(handlerId, (result, context) => {
+                    try {
+                        const response = result.responses[0];
+                        
+                        if (response.status === 'error') {
+                            reject(new Error(response.statusText || 'Unknown error'));
+                            return;
+                        }
+                        
+                        if (response.status === 'complete') {
+                            // Parse meme captions from response
+                            const memes = parseMemeResponse(response.content);
+                            
+                            // Generate and display memes
+                            memes.forEach((meme, index) => {
+                                createMemeElement(container, meme, index + 1);
+                            });
+                            
+                            resolve();
+                        }
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+                
+                // Send message to the bot with the image
+                window.Poe.sendUserMessage(
+                    `${botName} Create 2 funny memes for this image. For each meme, provide a top text and bottom text in the following format EXACTLY:
+                    
+Meme 1:
+Top: [top text]
+Bottom: [bottom text]
+
+Meme 2:
+Top: [top text]
+Bottom: [bottom text]
+
+Be creative, humorous, and make the text relevant to the image. Keep each text short (1-2 lines max).`,
+                    {
+                        attachments: [uploadedImage],
+                        handler: handlerId,
+                        stream: false,
+                        openChat: false
+                    }
+                ).catch(reject);
+            });
+        }
+
+        // Parse meme response content
+        function parseMemeResponse(content) {
+            const memes = [];
+            
+            // Match for "Meme X:" followed by top and bottom text
+            const regex = /Meme \d+:\s*\n+\s*Top:\s*(.+?)\s*\n+\s*Bottom:\s*(.+?)(?=\n+\s*Meme \d+:|$)/gs;
+            
+            let match;
+            while ((match = regex.exec(content)) !== null) {
+                if (match.length >= 3) {
+                    memes.push({
+                        top: match[1].trim(),
+                        bottom: match[2].trim()
+                    });
+                }
+            }
+            
+            // If we couldn't extract memes with the regex, try a simpler approach
+            if (memes.length === 0) {
+                const lines = content.split('\n');
+                let currentMeme = null;
+                
+                for (const line of lines) {
+                    const trimmedLine = line.trim();
+                    
+                    if (trimmedLine.startsWith('Meme ') && trimmedLine.includes(':')) {
+                        currentMeme = { top: '', bottom: '' };
+                        memes.push(currentMeme);
+                    } else if (currentMeme && trimmedLine.startsWith('Top:')) {
+                        currentMeme.top = trimmedLine.replace('Top:', '').trim();
+                    } else if (currentMeme && trimmedLine.startsWith('Bottom:')) {
+                        currentMeme.bottom = trimmedLine.replace('Bottom:', '').trim();
+                    }
+                }
+            }
+            
+            return memes.slice(0, 2); // Return at most 2 memes
+        }
+
+        // Create a meme element
+        function createMemeElement(container, meme, index) {
+            const memeEl = document.createElement('div');
+            memeEl.className = 'bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden';
+            
+            const memeContainer = document.createElement('div');
+            memeContainer.className = 'relative';
+            
+            // Clone the uploaded image
+            const img = new Image();
+            img.src = imagePreview.src;
+            img.className = 'w-full';
+            img.alt = `Meme ${index}`;
+            
+            // Create top text
+            const topText = document.createElement('div');
+            topText.className = 'absolute top-2 left-0 right-0 text-center px-4 text-white font-bold text-xl md:text-2xl uppercase tracking-wide drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]';
+            topText.style.textShadow = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
+            topText.textContent = meme.top;
+            
+            // Create bottom text
+            const bottomText = document.createElement('div');
+            bottomText.className = 'absolute bottom-2 left-0 right-0 text-center px-4 text-white font-bold text-xl md:text-2xl uppercase tracking-wide drop-shadow-[0_1px_1px_rgba(0,0,0,0.8)]';
+            bottomText.style.textShadow = '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000';
+            bottomText.textContent = meme.bottom;
+            
+            // Append elements
+            memeContainer.appendChild(img);
+            memeContainer.appendChild(topText);
+            memeContainer.appendChild(bottomText);
+            memeEl.appendChild(memeContainer);
+            container.appendChild(memeEl);
+        }
+    </script>
 </body>
 </html>
